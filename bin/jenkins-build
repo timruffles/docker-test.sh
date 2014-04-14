@@ -1,0 +1,104 @@
+#!/bin/bash
+
+set -e
+if [[ ! -e bin/docker-test-jenkins-hook.sh ]]; then
+    echo "bin/docker-test-jenkins-hook.sh must exist relative to working directory when invoking build"
+    exit 1
+fi
+source bin/docker-test-jenkins-hook.sh
+
+main() {
+
+    assert_env_vars IMAGE_TAG
+
+    trap '_test_teardown' EXIT
+    CI_BUILD=true
+    SHA=$GIT_COMMIT
+    SUFFIX=$(date +%s)
+
+    title "Setup"
+    _test_setup
+
+    title "TESTING: booting test containers"
+    run_tests
+    test_exit_status=$?
+
+    if is_deployable_branch && [[ "$test_exit_status" == "0" ]]; then
+      title "Building and pushing image for $SHA as tests passed"
+      build_and_push
+    fi
+
+    exit $test_exit_status
+}
+
+# BUILD STEPS
+
+_test_setup() {
+    test_setup
+}
+
+run_tests() {
+    set +e
+    run_test_container
+    test_exit_status=$?
+    set -e
+    return $test_exit_status
+}
+
+build_and_push() {
+    if has_test_dockerfile; then
+        mv built/Dockerfile.original built/Dockerfile
+        docker build --quiet --rm --tag $IMAGE_TAG-$SHA built
+    fi
+    docker tag $IMAGE_TAG-$SHA $DOCKER_REPO_URL/$IMAGE_TAG
+    docker push $DOCKER_REPO_URL/$IMAGE_TAG
+}
+
+_test_teardown() {
+    title "TEARDOWN"
+    test_teardown
+    docker rmi $IMAGE_TAG-$SHA
+}
+
+# PUBLIC API
+
+build_test_image() {
+    rm -rf built || mkdir -p built
+    git checkout-index -a --prefix built/
+    if has_test_dockerfile; then
+        mv built/Dockerfile built/Dockerfile.original
+        mv built/test/Dockerfile built
+    fi
+    docker build --quiet -rm --tag $IMAGE_TAG-$SHA built
+}
+
+# HELPERS
+
+has_test_dockerfile() {
+    [[ "$TEST_DOCKERFILE" != "" ]]
+}
+
+is_deployable_branch() {
+    for branch in $(echo "$DEPLOY_BRANCHES" | tr "," "\n"); do
+        if [[ "$GIT_BRANCH" =~ /"$branch"$ ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+title() {
+    printf "\n\n$1\n"
+}
+
+assert_env_vars() {
+    for var in $@; do
+        if [[ "${!var}" == "" ]]; then
+            echo "$var must have a value"
+            exit 1
+        fi
+    done
+}
+
+main
+
