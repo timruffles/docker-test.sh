@@ -53,3 +53,6 @@ Executes test. Ensure exit status is `1` on test failures.
 
 Cleans up after test run.
 
+##### `after_push()` (optional)
+
+Run a functional after an image is pushed (and thus tests have passed).

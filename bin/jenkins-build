@@ -26,6 +26,7 @@ main() {
     if is_deployable_branch && [[ "$test_exit_status" == "0" ]]; then
       title "Building and pushing image for $SHA as tests passed"
       build_and_push
+      after_push
     fi
 
     exit $test_exit_status
@@ -71,6 +72,12 @@ build_test_image() {
     fi
     docker build --quiet -rm --tag $IMAGE_TAG-$SHA built
 }
+
+# OPTIONAL CALLBACK DEFINITIONS
+
+test_setup() {}
+test_teardown() {}
+after_push() {}
 
 # HELPERS
 

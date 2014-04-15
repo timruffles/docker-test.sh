@@ -1,6 +1,6 @@
 {
   "name": "docker-test.sh",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "helper scripts for running tests/ci using docker images",
   "main": "index.js",
   "bin": {
