@@ -75,9 +75,15 @@ build_test_image() {
 
 # OPTIONAL CALLBACK DEFINITIONS
 
-test_setup() {}
-test_teardown() {}
-after_push() {}
+test_setup() {
+  true
+}
+test_teardown() {
+  true
+}
+after_push() {
+  true
+}
 
 # HELPERS
 
