@@ -5,7 +5,6 @@ if [[ ! -e bin/docker-test-jenkins-hook.sh ]]; then
     echo "bin/docker-test-jenkins-hook.sh must exist relative to working directory when invoking build"
     exit 1
 fi
-source bin/docker-test-jenkins-hook.sh
 
 main() {
 
@@ -16,7 +15,7 @@ main() {
     SHA=$GIT_COMMIT
     SUFFIX=$(date +%s)
 
-    title "Setup"
+    title "SETUP"
     _test_setup
 
     title "TESTING: booting test containers"
@@ -84,6 +83,9 @@ test_teardown() {
 after_push() {
   true
 }
+
+# source the hooks after default implementations
+source bin/docker-test-jenkins-hook.sh
 
 # HELPERS
 
