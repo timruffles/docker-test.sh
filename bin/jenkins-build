@@ -85,7 +85,7 @@ build_test_image() {
         mv built/Dockerfile built/Dockerfile.original
         mv built/test/Dockerfile built
     fi
-    docker build --quiet -rm --tag $IMAGE_TAG-$SHA built
+    docker build --quiet --rm --tag $IMAGE_TAG-$SHA built
 }
 
 # DEFAULT CALLBACK DEFINITIONS
