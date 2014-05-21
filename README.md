@@ -39,11 +39,19 @@ TEST_DOCKERFILE=test/Dockerfile
 DEPLOY_BRANCHES=dev,master,staging
 ```
 
+#### Public API
+
+##### `build_test_image`
+
+Creates an image from a clean version of the git commit. Tags as `$IMAGE-TAG-$GIT_COMMIT`. By default this is called by `test_setup`.
+
 #### Callbacks
 
 ##### `test_setup()` (optional)
 
-Runs before test container, ensures test environment setup
+Runs before test container, here you ensure your test environment is ready.
+
+Default is to call `build_test_image`.
 
 ##### `run_test_container()`
 
