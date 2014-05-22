@@ -71,8 +71,12 @@ _test_teardown() {
     _title "TEARDOWN"
     test_teardown
 
-    _sub_title "Removing test image"
-    docker rmi $IMAGE_TAG-$SHA
+    if docker images | grep ^$IMAGE_TAG-$SHA; then
+      _sub_title "Removing test image"
+      docker rmi $IMAGE_TAG-$SHA
+    else
+      _sub_title "Test image never built!"
+    fi
 }
 
 # PUBLIC API
