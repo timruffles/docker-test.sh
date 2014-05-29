@@ -8,8 +8,9 @@ _main_jb() {
         exit 1
     fi
 
-    mandatory_callbacks=(run_test_container)
-    missing=0
+    local mandatory_callbacks=(run_test_container)
+    local missing=0
+    local cb
 
     for cb in $mandatory_callbacks; do
         if [[ "function" != $(type -t $cb) ]]; then
@@ -26,8 +27,6 @@ _main_jb() {
 
     trap '_test_teardown' EXIT
 
-    SHA=$GIT_COMMIT
-
     _title "SETUP"
     _test_setup
 
@@ -36,7 +35,7 @@ _main_jb() {
     test_exit_status=$?
 
     if _is_deployable_branch && [[ "$test_exit_status" == "0" ]]; then
-      _title "Building and pushing image for $SHA as tests passed"
+      _title "Building and pushing image for $GIT_COMMIT as tests passed"
       _build_and_push
       after_push
     fi
@@ -53,7 +52,7 @@ _test_setup() {
 _run_tests() {
     set +e
     run_test_container
-    test_exit_status=$?
+    local test_exit_status=$?
     set -e
     return $test_exit_status
 }
@@ -61,9 +60,9 @@ _run_tests() {
 _build_and_push() {
     if _has_test_dockerfile; then
         mv built/Dockerfile.original built/Dockerfile
-        docker build --quiet --rm --tag $IMAGE_TAG-$SHA built
+        docker build --quiet --rm --tag $IMAGE_TAG-$GIT_COMMIT built
     fi
-    docker tag $IMAGE_TAG-$SHA $DOCKER_REPO_URL/$IMAGE_TAG
+    docker tag $IMAGE_TAG-$GIT_COMMIT $DOCKER_REPO_URL/$IMAGE_TAG
     docker push $DOCKER_REPO_URL/$IMAGE_TAG
 }
 
@@ -71,9 +70,9 @@ _test_teardown() {
     _title "TEARDOWN"
     test_teardown
 
-    if docker images | grep ^$IMAGE_TAG-$SHA; then
+    if docker images | grep ^$IMAGE_TAG-$GIT_COMMIT; then
       _sub_title "Removing test image"
-      docker rmi $IMAGE_TAG-$SHA
+      docker rmi $IMAGE_TAG-$GIT_COMMIT
     else
       _sub_title "Test image never built!"
     fi
@@ -89,7 +88,7 @@ build_test_image() {
         mv built/Dockerfile built/Dockerfile.original
         mv built/test/Dockerfile built
     fi
-    docker build --quiet --rm --tag $IMAGE_TAG-$SHA built
+    docker build --quiet --rm --tag $IMAGE_TAG-$GIT_COMMIT built
 }
 
 # DEFAULT CALLBACK DEFINITIONS
@@ -114,6 +113,7 @@ _has_test_dockerfile() {
 }
 
 _is_deployable_branch() {
+    local branch
     for branch in $(echo "$DEPLOY_BRANCHES" | tr "," "\n"); do
         if [[ "$GIT_BRANCH" =~ /"$branch"$ ]]; then
             return 0
@@ -131,6 +131,7 @@ _sub_title() {
 }
 
 _assert_env_vars() {
+    local var
     for var in $@; do
         if [[ "${!var}" == "" ]]; then
             echo "$var must have a value"
